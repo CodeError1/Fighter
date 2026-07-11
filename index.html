@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CodeError</title>
+  <meta name="description" content="تطبيقات موثوقة من تطوير CodeError">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <nav class="site-nav">
+    <a href="index.html" class="brand">
+      <img src="assets/logo.png" alt="CodeError">
+    </a>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-glow"></div>
+
+    <!-- لوجو التطبيق: بيتحط تلقائي من صفحة الداشبورد. لو مفيش لوجو لسه، بتظهر أيقونة مؤقتة -->
+    <div class="app-icon-wrap" id="appIconWrap">
+      <img src="assets/app-icon.png" alt="شعار التطبيق"
+           onerror="this.parentElement.innerHTML='&lt;div class=&quot;app-icon-placeholder&quot;&gt;&lt;i&gt;&lt;svg viewBox=&quot;0 0 24 24&quot;&gt;&lt;rect x=&quot;7.5&quot; y=&quot;2.5&quot; width=&quot;9&quot; height=&quot;19&quot; rx=&quot;2&quot;&gt;&lt;/rect&gt;&lt;path d=&quot;M11 18h2&quot;&gt;&lt;/path&gt;&lt;/svg&gt;&lt;/i&gt;&lt;/div&gt;'">
+    </div>
+
+    <div class="hero-badge"><i><svg viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 5-3.5 8-7 9-3.5-1-7-4-7-9V6l7-3z"/></svg></i> تطبيق آمن وموثوق</div>
+    <h1>تطبيقات ذكية<br><span>بتجربة موثوقة</span></h1>
+    <p class="lead">
+      من تطوير CodeError — نصمم تطبيقات بسيطة وسريعة، ونهتم بأدق التفاصيل عشان تجربتك تبقى مريحة من أول استخدام.
+    </p>
+
+    <!-- زرار التحميل بيحمّل الملف على طول، من غير ما يوديك لصفحة تانية -->
+    <a href="app-release.apk" class="btn-primary-lg" download>
+      <i><svg viewBox="0 0 24 24"><path d="M12 4v10"/><path d="M7.5 10.5L12 15l4.5-4.5"/><path d="M5 19h14"/></svg></i>
+      حمّل التطبيق الآن
+    </a>
+
+    <div class="safety-note">
+      <i><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5"/><circle cx="12" cy="8" r="1" fill="currentColor" stroke="none"/></svg></i>
+      <span>
+        أثناء التثبيت قد يظهر لك تنبيه (الملف ضار)، هذا إجراء طبيعي من نظام أندرويد لأن التطبيق يتم تحميله برابط مباشر وليس من المتجر. التطبيق آمن 100% ومطور بواسطة CodeError.
+      </span>
+    </div>
+  </section>
+
+  <section class="trust">
+    <div class="trust-grid">
+      <div class="trust-card">
+        <i><svg viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 5-3.5 8-7 9-3.5-1-7-4-7-9V6l7-3z"/></svg></i>
+        <h3>آمن 100%</h3>
+        <p>التطبيق مُختبر ومطوَّر بالكامل بواسطة CodeError.</p>
+      </div>
+      <div class="trust-card">
+        <i><svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.6 6.2"/><path d="M20 5v6h-6"/></svg></i>
+        <h3>تحديثات مستمرة</h3>
+        <p>بنطور ونحسّن التطبيق بشكل دوري عشان أفضل أداء.</p>
+      </div>
+      <div class="trust-card">
+        <i><svg viewBox="0 0 24 24"><path d="M4 13a8 8 0 0 1 16 0"/><rect x="2.5" y="13" width="4.5" height="6.5" rx="1.8"/><rect x="17" y="13" width="4.5" height="6.5" rx="1.8"/></svg></i>
+        <h3>دعم فني</h3>
+        <p>فريقنا موجود لأي استفسار أو مشكلة تقابلك.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span class="brand-inline">Code<span>Error</span></span>
+    <br>
+    جميع الحقوق محفوظة © 2026
+  </footer>
+
+</body>
+</html>

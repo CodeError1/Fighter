@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>الداشبورد — CodeError</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="dash-page">
+
+  <!-- شاشة الدخول بالباسوورد -->
+  <div class="dash-lock" id="lockScreen">
+    <div class="dash-card">
+      <div class="brand"><img src="assets/logo.png" alt="CodeError"></div>
+      <h2>دخول الداشبورد</h2>
+      <p class="dash-hint">الصفحة دي خاصة بيك بس، متبعتش اللينك بتاعها لحد.</p>
+      <div class="field">
+        <input type="password" id="lockPassword" placeholder="الباسوورد">
+      </div>
+      <button class="btn-full" onclick="tryUnlock()">دخول</button>
+      <div class="status-box err" id="lockStatus"></div>
+    </div>
+  </div>
+
+  <!-- محتوى الداشبورد -->
+  <div class="dash-wrap" id="dashContent" style="display:none;">
+
+    <div class="site-nav" style="padding:0 0 24px;">
+      <div class="brand"><img src="assets/logo.png" alt="CodeError"></div>
+      <button class="btn-outline-full" style="width:auto;padding:9px 16px;font-size:0.85rem;" onclick="logout()">تسجيل خروج</button>
+    </div>
+
+    <div class="dash-card">
+      <h2>إعدادات GitHub</h2>
+      <p class="dash-hint">
+        بيانات الريبو اللي الموقع منشور عليه على GitHub Pages. الإعدادات دي بتتحفظ في المتصفح بتاعك بس.
+      </p>
+      <div class="field">
+        <label>اسم المستخدم / المنظمة</label>
+        <input type="text" id="ghOwner" placeholder="مثال: omar">
+      </div>
+      <div class="field">
+        <label>اسم الريبو</label>
+        <input type="text" id="ghRepo" placeholder="مثال: admob">
+      </div>
+      <div class="field">
+        <label>البرانش</label>
+        <input type="text" id="ghBranch" placeholder="main">
+      </div>
+      <div class="field">
+        <label>مسار فولدر الموقع داخل الريبو (سيبه فاضي لو الموقع في جذر الريبو)</label>
+        <input type="text" id="ghPrefix" placeholder="مثال: admob/">
+      </div>
+      <div class="field">
+        <label>GitHub Token</label>
+        <input type="password" id="ghToken" placeholder="ghp_xxxxxxxxxxxxxxxx">
+      </div>
+      <div class="field-check">
+        <input type="checkbox" id="ghRemember" checked>
+        <label for="ghRemember" style="margin:0;font-weight:400;">تذكر البيانات دي على الجهاز ده</label>
+      </div>
+      <button class="btn-full" onclick="saveSettings()">حفظ الإعدادات</button>
+      <div class="status-box" id="settingsStatus"></div>
+      <p class="dash-hint" style="margin:14px 0 0;">
+        محتاج تعمل GitHub Token مرة واحدة من
+        <a href="https://github.com/settings/tokens?type=beta" target="_blank" style="color:var(--red);font-weight:700;">هنا</a>
+        (Fine-grained token) وتديله صلاحية Read and write على Contents بس، لنفس الريبو ده. التوكن ده زي الباسوورد بتاعت الريبو، متشاركوش مع حد.
+      </p>
+    </div>
+
+    <div class="dash-card">
+      <h2>شعار التطبيق</h2>
+      <p class="dash-hint">أي صورة هترفعها هتتحول تلقائي لمقاس مربع PNG وتتحط في الموقع بدل الأيقونة المؤقتة.</p>
+      <div class="dash-preview" id="iconPreviewWrap" style="display:none;">
+        <img id="iconPreview" src="" alt="معاينة">
+        <span id="iconPreviewName"></span>
+      </div>
+      <div class="field">
+        <input type="file" id="iconFile" accept="image/*">
+      </div>
+      <button class="btn-full" id="iconBtn" onclick="uploadIcon()">رفع الشعار</button>
+      <div class="status-box" id="iconStatus"></div>
+    </div>
+
+    <div class="dash-card">
+      <h2>ملف التطبيق (APK)</h2>
+      <p class="dash-hint">هيتحط بنفس الاسم اللي زرار التحميل في الموقع بيدور عليه، فيشتغل التحميل على طول.</p>
+      <div class="field">
+        <input type="file" id="apkFile" accept=".apk">
+      </div>
+      <button class="btn-full" id="apkBtn" onclick="uploadApk()">رفع ملف الـ APK</button>
+      <div class="status-box" id="apkStatus"></div>
+    </div>
+
+  </div>
+
+<script>
+const PASSWORD_HASH = "8476d174d5499fa213cfb838f7c66acfed059c83f951473df0fe01b28f1e753e";
+const ICON_PATH = "assets/app-icon.png";
+const APK_PATH = "app-release.apk";
+
+async function sha256Hex(text) {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function tryUnlock() {
+  const pw = document.getElementById("lockPassword").value;
+  const hash = await sha256Hex(pw);
+  const statusEl = document.getElementById("lockStatus");
+  if (hash === PASSWORD_HASH) {
+    sessionStorage.setItem("dash_unlocked", "1");
+    showDashboard();
+  } else {
+    statusEl.textContent = "الباسوورد غلط.";
+    statusEl.classList.add("show");
+  }
+}
+
+function logout() {
+  sessionStorage.removeItem("dash_unlocked");
+  location.reload();
+}
+
+function showDashboard() {
+  document.getElementById("lockScreen").style.display = "none";
+  document.getElementById("dashContent").style.display = "block";
+  loadSettings();
+}
+
+function loadSettings() {
+  document.getElementById("ghOwner").value = localStorage.getItem("gh_owner") || "";
+  document.getElementById("ghRepo").value = localStorage.getItem("gh_repo") || "";
+  document.getElementById("ghBranch").value = localStorage.getItem("gh_branch") || "main";
+  document.getElementById("ghPrefix").value = localStorage.getItem("gh_prefix") || "";
+  document.getElementById("ghToken").value = localStorage.getItem("gh_token") || "";
+}
+
+function saveSettings() {
+  const remember = document.getElementById("ghRemember").checked;
+  const values = {
+    gh_owner: document.getElementById("ghOwner").value.trim(),
+    gh_repo: document.getElementById("ghRepo").value.trim(),
+    gh_branch: document.getElementById("ghBranch").value.trim() || "main",
+    gh_prefix: document.getElementById("ghPrefix").value.trim(),
+    gh_token: document.getElementById("ghToken").value.trim(),
+  };
+  if (remember) {
+    Object.entries(values).forEach(([k, v]) => localStorage.setItem(k, v));
+  } else {
+    Object.keys(values).forEach(k => localStorage.removeItem(k));
+  }
+  setStatus("settingsStatus", "ok", "الإعدادات اتحفظت.");
+}
+
+function getSettings() {
+  return {
+    owner: document.getElementById("ghOwner").value.trim(),
+    repo: document.getElementById("ghRepo").value.trim(),
+    branch: document.getElementById("ghBranch").value.trim() || "main",
+    prefix: document.getElementById("ghPrefix").value.trim(),
+    token: document.getElementById("ghToken").value.trim(),
+  };
+}
+
+function setStatus(id, type, message) {
+  const el = document.getElementById(id);
+  el.className = "status-box show " + type;
+  el.textContent = message;
+}
+
+function fullPath(prefix, path) {
+  let p = (prefix || "").trim();
+  if (p && !p.endsWith("/")) p += "/";
+  return p + path;
+}
+
+async function ghGetSha(settings, path) {
+  const url = `https://api.github.com/repos/${settings.owner}/${settings.repo}/contents/${path}?ref=${settings.branch}`;
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${settings.token}`, Accept: "application/vnd.github+json" },
+  });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`تعذر التحقق من الملف الحالي (${res.status})`);
+  const data = await res.json();
+  return data.sha;
+}
+
+async function ghPutFile(settings, path, base64Content, message) {
+  const sha = await ghGetSha(settings, path);
+  const url = `https://api.github.com/repos/${settings.owner}/${settings.repo}/contents/${path}`;
+  const body = { message, content: base64Content, branch: settings.branch };
+  if (sha) body.sha = sha;
+  const res = await fetch(url, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${settings.token}`,
+      Accept: "application/vnd.github+json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || `فشل الرفع (${res.status})`);
+  }
+  return res.json();
+}
+
+function validateSettings(settings) {
+  if (!settings.owner || !settings.repo || !settings.token) {
+    throw new Error("لازم تملأ اسم المستخدم واسم الريبو والتوكن في إعدادات GitHub الأول.");
+  }
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(",")[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function imageFileToPngBase64(file, maxSize) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = () => { img.src = reader.result; };
+    reader.onerror = reject;
+    img.onload = () => {
+      const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+      const w = Math.round(img.width * scale);
+      const h = Math.round(img.height * scale);
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+      const dataUrl = canvas.toDataURL("image/png");
+      resolve(dataUrl.split(",")[1]);
+    };
+    img.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+document.getElementById("iconFile").addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const url = URL.createObjectURL(file);
+  document.getElementById("iconPreview").src = url;
+  document.getElementById("iconPreviewName").textContent = file.name;
+  document.getElementById("iconPreviewWrap").style.display = "flex";
+});
+
+async function uploadIcon() {
+  const btn = document.getElementById("iconBtn");
+  const file = document.getElementById("iconFile").files[0];
+  if (!file) { setStatus("iconStatus", "err", "اختار صورة الأول."); return; }
+  const settings = getSettings();
+  try {
+    validateSettings(settings);
+    btn.disabled = true;
+    setStatus("iconStatus", "info", "بيترفع...");
+    const base64 = await imageFileToPngBase64(file, 512);
+    await ghPutFile(settings, fullPath(settings.prefix, ICON_PATH), base64, "تحديث شعار التطبيق");
+    setStatus("iconStatus", "ok", "تم رفع الشعار بنجاح. هيظهر على الموقع خلال دقيقة أو اتنين.");
+  } catch (err) {
+    setStatus("iconStatus", "err", err.message);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function uploadApk() {
+  const btn = document.getElementById("apkBtn");
+  const file = document.getElementById("apkFile").files[0];
+  if (!file) { setStatus("apkStatus", "err", "اختار ملف الـ APK الأول."); return; }
+  if (file.size > 95 * 1024 * 1024) {
+    setStatus("apkStatus", "err", "الملف أكبر من 95MB، جوجل API مش هيقبله بالطريقة دي.");
+    return;
+  }
+  const settings = getSettings();
+  try {
+    validateSettings(settings);
+    btn.disabled = true;
+    setStatus("apkStatus", "info", "بيترفع... ممكن ياخد وقت حسب حجم الملف وسرعة النت.");
+    const base64 = await fileToBase64(file);
+    await ghPutFile(settings, fullPath(settings.prefix, APK_PATH), base64, "تحديث ملف التطبيق");
+    setStatus("apkStatus", "ok", "تم رفع ملف التطبيق بنجاح. هيشتغل زرار التحميل في الموقع خلال دقيقة أو اتنين.");
+  } catch (err) {
+    setStatus("apkStatus", "err", err.message);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+if (sessionStorage.getItem("dash_unlocked") === "1") {
+  showDashboard();
+}
+</script>
+
+</body>
+</html>
