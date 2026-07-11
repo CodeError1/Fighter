@@ -56,7 +56,12 @@
       </div>
       <div class="field">
         <label>GitHub Token</label>
-        <input type="password" id="ghToken" placeholder="ghp_xxxxxxxxxxxxxxxx">
+        <div style="display:flex; gap:8px;">
+          <input type="password" id="ghToken" placeholder="ghp_xxxxxxxxxxxxxxxx"
+                 autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+                 style="flex:1;">
+          <button type="button" class="btn-outline-full" style="width:auto;padding:0 16px;" onclick="toggleTokenVisibility()">👁</button>
+        </div>
       </div>
       <div class="field-check">
         <input type="checkbox" id="ghRemember" checked>
@@ -146,7 +151,7 @@ function saveSettings() {
     gh_repo: document.getElementById("ghRepo").value.trim(),
     gh_branch: document.getElementById("ghBranch").value.trim() || "main",
     gh_prefix: document.getElementById("ghPrefix").value.trim(),
-    gh_token: document.getElementById("ghToken").value.trim(),
+    gh_token: document.getElementById("ghToken").value.replace(/\s+/g, ""),
   };
   if (remember) {
     Object.entries(values).forEach(([k, v]) => localStorage.setItem(k, v));
@@ -162,8 +167,13 @@ function getSettings() {
     repo: document.getElementById("ghRepo").value.trim(),
     branch: document.getElementById("ghBranch").value.trim() || "main",
     prefix: document.getElementById("ghPrefix").value.trim(),
-    token: document.getElementById("ghToken").value.trim(),
+    token: document.getElementById("ghToken").value.replace(/\s+/g, ""),
   };
+}
+
+function toggleTokenVisibility() {
+  const el = document.getElementById("ghToken");
+  el.type = el.type === "password" ? "text" : "password";
 }
 
 function setStatus(id, type, message) {
@@ -305,3 +315,4 @@ if (sessionStorage.getItem("dash_unlocked") === "1") {
 
 </body>
 </html>
+
