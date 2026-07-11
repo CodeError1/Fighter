@@ -57,8 +57,10 @@
       <div class="field">
         <label>GitHub Token</label>
         <div style="display:flex; gap:8px;">
-          <input type="password" id="ghToken" placeholder="ghp_xxxxxxxxxxxxxxxx"
+          <input type="text" id="ghToken" name="gh-secret-value" placeholder="ghp_xxxxxxxxxxxxxxxx"
                  autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+                 data-lpignore="true" data-1p-ignore data-bwignore
+                 class="masked"
                  style="flex:1;">
           <button type="button" class="btn-outline-full" style="width:auto;padding:0 16px;" onclick="toggleTokenVisibility()">👁</button>
         </div>
@@ -174,8 +176,7 @@ function getSettings() {
 }
 
 function toggleTokenVisibility() {
-  const el = document.getElementById("ghToken");
-  el.type = el.type === "password" ? "text" : "password";
+  document.getElementById("ghToken").classList.toggle("masked");
 }
 
 function updateTokenLen() {
@@ -325,5 +326,6 @@ if (sessionStorage.getItem("dash_unlocked") === "1") {
 
 </body>
 </html>
+
 
 
