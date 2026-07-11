@@ -62,6 +62,7 @@
                  style="flex:1;">
           <button type="button" class="btn-outline-full" style="width:auto;padding:0 16px;" onclick="toggleTokenVisibility()">👁</button>
         </div>
+        <p class="dash-hint" id="tokenLen" style="margin:6px 0 0;">طول التوكن: 0 حرف — التوكنات من نوع github_pat_ بتكون تقريبًا 93 حرف</p>
       </div>
       <div class="field-check">
         <input type="checkbox" id="ghRemember" checked>
@@ -142,6 +143,7 @@ function loadSettings() {
   document.getElementById("ghBranch").value = localStorage.getItem("gh_branch") || "main";
   document.getElementById("ghPrefix").value = localStorage.getItem("gh_prefix") || "";
   document.getElementById("ghToken").value = localStorage.getItem("gh_token") || "";
+  updateTokenLen();
 }
 
 function saveSettings() {
@@ -175,6 +177,14 @@ function toggleTokenVisibility() {
   const el = document.getElementById("ghToken");
   el.type = el.type === "password" ? "text" : "password";
 }
+
+function updateTokenLen() {
+  const val = document.getElementById("ghToken").value.replace(/\s+/g, "");
+  const el = document.getElementById("tokenLen");
+  el.textContent = `طول التوكن: ${val.length} حرف — التوكنات من نوع github_pat_ بتكون تقريبًا 93 حرف`;
+  el.style.color = (val.length > 0 && val.length < 60) ? "var(--red-dark)" : "var(--muted)";
+}
+document.getElementById("ghToken").addEventListener("input", updateTokenLen);
 
 function setStatus(id, type, message) {
   const el = document.getElementById(id);
@@ -315,4 +325,5 @@ if (sessionStorage.getItem("dash_unlocked") === "1") {
 
 </body>
 </html>
+
 
