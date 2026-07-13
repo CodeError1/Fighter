@@ -80,8 +80,12 @@
     </div>
 
     <div class="dash-card">
-      <h2>شعار التطبيق</h2>
-      <p class="dash-hint">أي صورة هترفعها هتتحول تلقائي لمقاس مربع PNG وتتحط في الموقع بدل الأيقونة المؤقتة.</p>
+      <h2>شعار تطبيق</h2>
+      <p class="dash-hint">اكتب كود المشروع اللي عايز تحدّث شعاره، وارفع الصورة. أي صورة هترفعها هتتحول تلقائي لمقاس مربع PNG.</p>
+      <div class="field">
+        <label>كود المشروع (Project ID)</label>
+        <input type="text" id="iconProjectId" placeholder="app1" value="app1">
+      </div>
       <div class="dash-preview" id="iconPreviewWrap" style="display:none;">
         <img id="iconPreview" src="" alt="معاينة">
         <span id="iconPreviewName"></span>
@@ -94,21 +98,56 @@
     </div>
 
     <div class="dash-card">
-      <h2>ملف التطبيق (APK)</h2>
-      <p class="dash-hint">هيتحط بنفس الاسم اللي زرار التحميل في الموقع بيدور عليه، فيشتغل التحميل على طول.</p>
+      <h2>إدارة تطبيقات المتجر</h2>
+      <p class="dash-hint">هنا بتتحكم في التطبيقات الظاهرة في المتجر (الاسم والوصف). كل تطبيق ليه كود بسيط بالإنجليزي (Project ID) بيربطه بملفات الأيقونة والـ APK بتاعته.</p>
+      <div id="storeList" class="dash-hint" style="margin-bottom:16px;">بيتم التحميل...</div>
       <div class="field">
-        <input type="file" id="apkFile" accept=".apk">
+        <label>كود المشروع (Project ID) — إنجليزي وأرقام بس، من غير مسافات</label>
+        <input type="text" id="spId" placeholder="مثال: app2">
       </div>
-      <button class="btn-full" id="apkBtn" onclick="uploadApk()">رفع ملف الـ APK</button>
-      <div class="status-box" id="apkStatus"></div>
+      <div class="field">
+        <label>اسم التطبيق</label>
+        <input type="text" id="spName" placeholder="اسم التطبيق">
+      </div>
+      <div class="field">
+        <label>وصف قصير</label>
+        <input type="text" id="spTagline" placeholder="وصف قصير يظهر في المتجر">
+      </div>
+      <button class="btn-full" onclick="saveProject()">حفظ في المتجر</button>
+      <div class="status-box" id="storeStatus"></div>
+      <p class="dash-hint" style="margin:14px 0 0;">
+        لو الكود جديد، دوس على "حفظ في المتجر" الأول، وبعدين ارفع شعاره من الكارت اللي فوق، وملف الـ APK بتاعه من GitHub Desktop زي الكارت اللي تحت.
+      </p>
+    </div>
+
+    <div class="dash-card">
+      <h2>ملف التطبيق (APK)</h2>
+      <p class="dash-hint">
+        ملفات الـ APK كبيرة الحجم والرفع المباشر من المتصفح مش موثوق فيها، فبتترفع من GitHub Desktop بدل هنا.
+      </p>
+      <p class="dash-hint">
+        1. افتح فولدر الريبو على جهازك.<br>
+        2. حط ملف الـ APK في المسار المناسب:
+      </p>
+      <p class="dash-hint" style="font-weight:700;">للتطبيق الأساسي (app1): app-release.apk (في جذر الريبو)</p>
+      <p class="dash-hint" style="font-weight:700;">لأي تطبيق تاني: projects/&lt;كود المشروع&gt;/app-release.apk</p>
+      <p class="dash-hint">3. من GitHub Desktop: Commit ثم Push.</p>
     </div>
 
   </div>
 
 <script>
 const PASSWORD_HASH = "8476d174d5499fa213cfb838f7c66acfed059c83f951473df0fe01b28f1e753e";
-const ICON_PATH = "assets/app-icon.png";
-const APK_PATH = "app-release.apk";
+const PROJECTS_PATH = "projects.json";
+
+function iconPathFor(id) {
+  const pid = (id || "").trim() || "app1";
+  return pid === "app1" ? "assets/app-icon.png" : `projects/${pid}/icon.png`;
+}
+
+function apkPathFor(id) {
+  return id === "app1" ? "app-release.apk" : `projects/${id}/app-release.apk`;
+}
 
 async function sha256Hex(text) {
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
@@ -137,6 +176,7 @@ function showDashboard() {
   document.getElementById("lockScreen").style.display = "none";
   document.getElementById("dashContent").style.display = "block";
   loadSettings();
+  loadStoreList();
 }
 
 function loadSettings() {
@@ -237,15 +277,6 @@ function validateSettings(settings) {
   }
 }
 
-function fileToBase64(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result.split(",")[1]);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
 function imageFileToPngBase64(file, maxSize) {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -281,13 +312,14 @@ async function uploadIcon() {
   const btn = document.getElementById("iconBtn");
   const file = document.getElementById("iconFile").files[0];
   if (!file) { setStatus("iconStatus", "err", "اختار صورة الأول."); return; }
+  const projectId = document.getElementById("iconProjectId").value;
   const settings = getSettings();
   try {
     validateSettings(settings);
     btn.disabled = true;
     setStatus("iconStatus", "info", "بيترفع...");
     const base64 = await imageFileToPngBase64(file, 512);
-    await ghPutFile(settings, fullPath(settings.prefix, ICON_PATH), base64, "تحديث شعار التطبيق");
+    await ghPutFile(settings, fullPath(settings.prefix, iconPathFor(projectId)), base64, "تحديث شعار التطبيق");
     setStatus("iconStatus", "ok", "تم رفع الشعار بنجاح. هيظهر على الموقع خلال دقيقة أو اتنين.");
   } catch (err) {
     setStatus("iconStatus", "err", err.message);
@@ -296,26 +328,105 @@ async function uploadIcon() {
   }
 }
 
-async function uploadApk() {
-  const btn = document.getElementById("apkBtn");
-  const file = document.getElementById("apkFile").files[0];
-  if (!file) { setStatus("apkStatus", "err", "اختار ملف الـ APK الأول."); return; }
-  if (file.size > 95 * 1024 * 1024) {
-    setStatus("apkStatus", "err", "الملف أكبر من 95MB، جوجل API مش هيقبله بالطريقة دي.");
+function b64EncodeUtf8(str) {
+  return btoa(unescape(encodeURIComponent(str)));
+}
+
+function b64DecodeUtf8(str) {
+  return decodeURIComponent(escape(atob(str.replace(/\n/g, ""))));
+}
+
+async function ghGetJson(settings, path) {
+  const url = `https://api.github.com/repos/${settings.owner}/${settings.repo}/contents/${path}?ref=${settings.branch}`;
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${settings.token}`, Accept: "application/vnd.github+json" },
+  });
+  if (res.status === 404) return { sha: null, data: [] };
+  if (!res.ok) throw new Error(`تعذر تحميل قائمة المتجر (${res.status})`);
+  const json = await res.json();
+  return { sha: json.sha, data: JSON.parse(b64DecodeUtf8(json.content)) };
+}
+
+async function ghPutJson(settings, path, dataArr, sha, message) {
+  const base64 = b64EncodeUtf8(JSON.stringify(dataArr, null, 2));
+  return ghPutFileRaw(settings, path, base64, message, sha);
+}
+
+async function ghPutFileRaw(settings, path, base64Content, message, sha) {
+  const url = `https://api.github.com/repos/${settings.owner}/${settings.repo}/contents/${path}`;
+  const body = { message, content: base64Content, branch: settings.branch };
+  if (sha) body.sha = sha;
+  const res = await fetch(url, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${settings.token}`,
+      Accept: "application/vnd.github+json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || `فشل الحفظ (${res.status})`);
+  }
+  return res.json();
+}
+
+async function loadStoreList() {
+  const settings = getSettings();
+  const listEl = document.getElementById("storeList");
+  if (!settings.owner || !settings.repo || !settings.token) {
+    listEl.textContent = "املأ إعدادات GitHub فوق الأول.";
     return;
   }
+  try {
+    const { data } = await ghGetJson(settings, fullPath(settings.prefix, PROJECTS_PATH));
+    if (!data.length) { listEl.textContent = "لسه مفيش تطبيقات في المتجر."; return; }
+    listEl.innerHTML = data.map(p =>
+      `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);">
+        <span>${p.name} <span style="color:var(--muted);">(${p.id})</span></span>
+        <button type="button" class="btn-outline-full" style="width:auto;padding:6px 12px;font-size:0.8rem;" onclick="removeProject('${p.id}')">حذف</button>
+      </div>`
+    ).join("");
+  } catch (err) {
+    listEl.textContent = err.message;
+  }
+}
+
+async function saveProject() {
+  const id = document.getElementById("spId").value.trim();
+  const name = document.getElementById("spName").value.trim();
+  const tagline = document.getElementById("spTagline").value.trim();
+  if (!id || !name) { setStatus("storeStatus", "err", "لازم تكتب كود المشروع والاسم على الأقل."); return; }
+  if (!/^[a-zA-Z0-9_-]+$/.test(id)) { setStatus("storeStatus", "err", "كود المشروع لازم يكون حروف إنجليزي وأرقام بس."); return; }
   const settings = getSettings();
   try {
     validateSettings(settings);
-    btn.disabled = true;
-    setStatus("apkStatus", "info", "بيترفع... ممكن ياخد وقت حسب حجم الملف وسرعة النت.");
-    const base64 = await fileToBase64(file);
-    await ghPutFile(settings, fullPath(settings.prefix, APK_PATH), base64, "تحديث ملف التطبيق");
-    setStatus("apkStatus", "ok", "تم رفع ملف التطبيق بنجاح. هيشتغل زرار التحميل في الموقع خلال دقيقة أو اتنين.");
+    setStatus("storeStatus", "info", "بيتحفظ...");
+    const path = fullPath(settings.prefix, PROJECTS_PATH);
+    const { sha, data } = await ghGetJson(settings, path);
+    const entry = { id, name, tagline, icon: iconPathFor(id), apk: apkPathFor(id) };
+    const idx = data.findIndex(p => p.id === id);
+    if (idx >= 0) data[idx] = entry; else data.push(entry);
+    await ghPutJson(settings, path, data, sha, `تحديث المتجر: ${id}`);
+    setStatus("storeStatus", "ok", "اتحفظ في المتجر بنجاح.");
+    loadStoreList();
   } catch (err) {
-    setStatus("apkStatus", "err", err.message);
-  } finally {
-    btn.disabled = false;
+    setStatus("storeStatus", "err", err.message);
+  }
+}
+
+async function removeProject(id) {
+  const settings = getSettings();
+  try {
+    validateSettings(settings);
+    const path = fullPath(settings.prefix, PROJECTS_PATH);
+    const { sha, data } = await ghGetJson(settings, path);
+    const filtered = data.filter(p => p.id !== id);
+    await ghPutJson(settings, path, filtered, sha, `حذف من المتجر: ${id}`);
+    loadStoreList();
+  } catch (err) {
+    setStatus("storeStatus", "err", err.message);
   }
 }
 
@@ -326,6 +437,3 @@ if (sessionStorage.getItem("dash_unlocked") === "1") {
 
 </body>
 </html>
-
-
-
