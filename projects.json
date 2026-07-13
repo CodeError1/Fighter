@@ -1,0 +1,9 @@
+[
+  {
+    "id": "Fighter",
+    "name": "Fighter",
+    "tagline": "Kickboxing with Captain Islam El-Gheity",
+    "icon": "projects/Fighter/icon.png",
+    "apk": "projects/Fighter/app-release.apk"
+  }
+]
