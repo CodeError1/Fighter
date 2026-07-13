@@ -113,10 +113,15 @@
         <label>وصف قصير</label>
         <input type="text" id="spTagline" placeholder="وصف قصير يظهر في المتجر">
       </div>
+      <div class="field">
+        <label>رقم الإصدار (Version)</label>
+        <input type="text" id="spVersion" placeholder="مثال: 1.0.3">
+      </div>
       <button class="btn-full" onclick="saveProject()">حفظ في المتجر</button>
       <div class="status-box" id="storeStatus"></div>
       <p class="dash-hint" style="margin:14px 0 0;">
         لو الكود جديد، دوس على "حفظ في المتجر" الأول، وبعدين ارفع شعاره من الكارت اللي فوق، وملف الـ APK بتاعه من GitHub Desktop زي الكارت اللي تحت.
+        لما تطلع نسخة جديدة من نفس التطبيق: ارفع الـ APK الجديد بنفس الاسم والمكان، وزوّد رقم الإصدار هنا وبس — التطبيق هيبلّغ المستخدمين تلقائي.
       </p>
     </div>
 
@@ -384,7 +389,7 @@ async function loadStoreList() {
     if (!data.length) { listEl.textContent = "لسه مفيش تطبيقات في المتجر."; return; }
     listEl.innerHTML = data.map(p =>
       `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);">
-        <span>${p.name} <span style="color:var(--muted);">(${p.id})</span></span>
+        <span>${p.name} <span style="color:var(--muted);">(${p.id} · v${p.version || "?"})</span></span>
         <button type="button" class="btn-outline-full" style="width:auto;padding:6px 12px;font-size:0.8rem;" onclick="removeProject('${p.id}')">حذف</button>
       </div>`
     ).join("");
@@ -397,6 +402,7 @@ async function saveProject() {
   const id = document.getElementById("spId").value.trim();
   const name = document.getElementById("spName").value.trim();
   const tagline = document.getElementById("spTagline").value.trim();
+  const version = document.getElementById("spVersion").value.trim() || "1.0.0";
   if (!id || !name) { setStatus("storeStatus", "err", "لازم تكتب كود المشروع والاسم على الأقل."); return; }
   if (!/^[a-zA-Z0-9_-]+$/.test(id)) { setStatus("storeStatus", "err", "كود المشروع لازم يكون حروف إنجليزي وأرقام بس."); return; }
   const settings = getSettings();
@@ -405,7 +411,7 @@ async function saveProject() {
     setStatus("storeStatus", "info", "بيتحفظ...");
     const path = fullPath(settings.prefix, PROJECTS_PATH);
     const { sha, data } = await ghGetJson(settings, path);
-    const entry = { id, name, tagline, icon: iconPathFor(id), apk: apkPathFor(id) };
+    const entry = { id, name, tagline, version, icon: iconPathFor(id), apk: apkPathFor(id) };
     const idx = data.findIndex(p => p.id === id);
     if (idx >= 0) data[idx] = entry; else data.push(entry);
     await ghPutJson(settings, path, data, sha, `تحديث المتجر: ${id}`);
