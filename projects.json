@@ -4,13 +4,15 @@
     "name": "اسم التطبيق",
     "tagline": "وصف قصير للتطبيق يظهر تحت الاسم في المتجر",
     "icon": "assets/app-icon.png",
-    "apk": "app-release.apk"
+    "apk": "app-release.apk",
+    "version": "1.0.0"
   },
   {
     "id": "Fighter",
     "name": "Fighter",
     "tagline": "Kickboxing with Captain Islam El-Gheity",
     "icon": "projects/Fighter/icon.png",
-    "apk": "projects/Fighter/app-release.apk"
+    "apk": "projects/Fighter/app-release.apk",
+    "version": "1.0.2"
   }
 ]
